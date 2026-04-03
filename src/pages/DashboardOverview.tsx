@@ -7,12 +7,11 @@ import { LivingAppsService, createRecordUrl } from '@/services/livingAppsService
 import { formatDate } from '@/lib/formatters';
 import { useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { IconAlertCircle, IconTool, IconRefresh, IconCheck, IconCalendar, IconPlus, IconPencil, IconTrash, IconUsers, IconBuilding, IconBook, IconChevronLeft, IconChevronRight, IconMapPin, IconUser, IconBuildingArch, IconNews } from '@tabler/icons-react';
+import { IconAlertCircle, IconTool, IconRefresh, IconCheck, IconPlus, IconPencil, IconTrash, IconBook, IconChevronLeft, IconChevronRight, IconMapPin, IconUser, IconBuildingArch, IconNews } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VeranstaltungenDialog } from '@/components/dialogs/VeranstaltungenDialog';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { StatCard } from '@/components/StatCard';
 import { AI_PHOTO_SCAN, AI_PHOTO_LOCATION } from '@/config/ai-features';
 
 const APPGROUP_ID = '68594156daa172bd1312dc62';
@@ -176,34 +175,6 @@ export default function DashboardOverview() {
           <IconPlus size={16} className="mr-1.5 shrink-0" />
           Neue Veranstaltung
         </Button>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          title="Veranstaltungen"
-          value={String(veranstaltungen.length)}
-          description="Gesamt erfasst"
-          icon={<IconCalendar size={18} className="text-muted-foreground" />}
-        />
-        <StatCard
-          title="Berater"
-          value={String(berater.length)}
-          description="Im Team"
-          icon={<IconUsers size={18} className="text-muted-foreground" />}
-        />
-        <StatCard
-          title="Fachbücher"
-          value={String(enrichedFachbuecher.length)}
-          description="Publiziert"
-          icon={<IconBook size={18} className="text-muted-foreground" />}
-        />
-        <StatCard
-          title="Kongress­räume"
-          value={String(kongresszentrum.length)}
-          description="Verfügbar"
-          icon={<IconBuilding size={18} className="text-muted-foreground" />}
-        />
       </div>
 
       {/* Main: Kalender + Sidebar */}
@@ -580,9 +551,6 @@ function DashboardSkeleton() {
       <div className="flex items-center justify-between">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-9 w-36" />
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
       </div>
       <Skeleton className="h-64 rounded-2xl" />
     </div>
