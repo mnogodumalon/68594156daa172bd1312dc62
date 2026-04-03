@@ -62,6 +62,7 @@ export default function DashboardOverview() {
   const [deleteTarget, setDeleteTarget] = useState<EnrichedVeranstaltungen | null>(null);
   const [prefillDate, setPrefillDate] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'berater' | 'raeume'>('berater');
+  const [selectedRaum, setSelectedRaum] = useState<Kongresszentrum | null>(null);
 
   // Map events by day
   const eventsByDay = useMemo(() => {
@@ -99,6 +100,11 @@ export default function DashboardOverview() {
   }, [enrichedVeranstaltungen]);
 
   const calDays = useMemo(() => getMonthDays(calYear, calMonth), [calYear, calMonth]);
+
+  const selectedRaumEvents = useMemo(() => {
+    if (!selectedRaum) return [];
+    return enrichedVeranstaltungen.filter(ev => ev.veranstaltung_raumName === selectedRaum.fields.raumname);
+  }, [selectedRaum, enrichedVeranstaltungen]);
 
   const handlePrevMonth = () => {
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); }
@@ -386,7 +392,7 @@ export default function DashboardOverview() {
                   <div className="px-4 py-6 text-center text-sm text-muted-foreground">Keine Räume erfasst</div>
                 ) : (
                   kongresszentrum.map(r => (
-                    <RaumRow key={r.record_id} raum={r} veranstaltungen={enrichedVeranstaltungen} />
+                    <RaumRow key={r.record_id} raum={r} veranstaltungen={enrichedVeranstaltungen} onClick={() => setSelectedRaum(r)} />
                   ))
                 )}
               </div>
@@ -425,6 +431,42 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
+
+      {/* Raum-Overlay */}
+      {selectedRaum && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setSelectedRaum(null)}>
+          <div className="bg-card border border-border rounded-2xl overflow-hidden w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-2 min-w-0">
+                <IconBuildingArch size={16} className="shrink-0 text-muted-foreground" />
+                <h3 className="font-semibold text-foreground truncate">{selectedRaum.fields.raumname ?? '–'}</h3>
+                {selectedRaum.fields.kapazitaet != null && (
+                  <span className="text-xs text-muted-foreground shrink-0">· {selectedRaum.fields.kapazitaet} Pers.</span>
+                )}
+              </div>
+              <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0" onClick={() => setSelectedRaum(null)}>
+                <IconPlus size={16} className="rotate-45" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-5 py-4">
+              {selectedRaumEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Keine Veranstaltungen für diesen Raum.</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedRaumEvents.map(ev => (
+                    <EventCard
+                      key={ev.record_id}
+                      ev={ev}
+                      onEdit={() => { handleEdit(ev); setSelectedRaum(null); }}
+                      onDelete={() => { setDeleteTarget(ev); setSelectedRaum(null); }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Dialoge */}
       <VeranstaltungenDialog
@@ -523,10 +565,10 @@ function BeraterRow({ berater, veranstaltungen }: { berater: Berater; veranstalt
   );
 }
 
-function RaumRow({ raum, veranstaltungen }: { raum: Kongresszentrum; veranstaltungen: EnrichedVeranstaltungen[] }) {
+function RaumRow({ raum, veranstaltungen, onClick }: { raum: Kongresszentrum; veranstaltungen: EnrichedVeranstaltungen[]; onClick: () => void }) {
   const count = veranstaltungen.filter(ev => ev.veranstaltung_raumName === raum.fields.raumname).length;
   return (
-    <div className="px-4 py-2.5 flex items-center gap-3">
+    <div className="px-4 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={onClick}>
       <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center shrink-0">
         <IconBuildingArch size={15} className="text-muted-foreground" />
       </div>
