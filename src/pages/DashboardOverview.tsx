@@ -63,6 +63,7 @@ export default function DashboardOverview() {
   const [prefillDate, setPrefillDate] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'berater' | 'raeume'>('berater');
   const [selectedRaum, setSelectedRaum] = useState<Kongresszentrum | null>(null);
+  const [selectedBerater, setSelectedBerater] = useState<Berater | null>(null);
 
   // Map events by day
   const eventsByDay = useMemo(() => {
@@ -105,6 +106,19 @@ export default function DashboardOverview() {
     if (!selectedRaum) return [];
     return enrichedVeranstaltungen.filter(ev => ev.veranstaltung_raumName === selectedRaum.fields.raumname);
   }, [selectedRaum, enrichedVeranstaltungen]);
+
+  const selectedBeraterEvents = useMemo(() => {
+    if (!selectedBerater) return [];
+    const name = `${selectedBerater.fields.berater_vorname ?? ''} ${selectedBerater.fields.berater_nachname ?? ''}`.trim();
+    const now = new Date();
+    return enrichedVeranstaltungen
+      .filter(ev => {
+        if (ev.veranstaltung_beraterName !== name) return false;
+        if (!ev.fields.veranstaltung_datum) return true;
+        return new Date(ev.fields.veranstaltung_datum) >= now;
+      })
+      .sort((a, b) => new Date(a.fields.veranstaltung_datum ?? 0).getTime() - new Date(b.fields.veranstaltung_datum ?? 0).getTime());
+  }, [selectedBerater, enrichedVeranstaltungen]);
 
   const handlePrevMonth = () => {
     if (calMonth === 0) { setCalYear(y => y - 1); setCalMonth(11); }
@@ -380,7 +394,7 @@ export default function DashboardOverview() {
                   <div className="px-4 py-6 text-center text-sm text-muted-foreground">Keine Berater erfasst</div>
                 ) : (
                   berater.map(b => (
-                    <BeraterRow key={b.record_id} berater={b} veranstaltungen={enrichedVeranstaltungen} />
+                    <BeraterRow key={b.record_id} berater={b} veranstaltungen={enrichedVeranstaltungen} onClick={() => setSelectedBerater(b)} />
                   ))
                 )}
               </div>
@@ -431,6 +445,46 @@ export default function DashboardOverview() {
           </div>
         </div>
       </div>
+
+      {/* Berater-Overlay */}
+      {selectedBerater && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setSelectedBerater(null)}>
+          <div className="bg-card border border-border rounded-2xl overflow-hidden w-full max-w-lg max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-primary/10 text-primary text-sm font-bold flex items-center justify-center shrink-0">
+                  {`${(selectedBerater.fields.berater_vorname ?? '').charAt(0)}${(selectedBerater.fields.berater_nachname ?? '').charAt(0)}`.toUpperCase() || '?'}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-foreground truncate">{selectedBerater.fields.berater_vorname} {selectedBerater.fields.berater_nachname}</h3>
+                  {selectedBerater.fields.berater_fachgebiet && (
+                    <p className="text-xs text-muted-foreground truncate">{selectedBerater.fields.berater_fachgebiet}</p>
+                  )}
+                </div>
+              </div>
+              <button className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0" onClick={() => setSelectedBerater(null)}>
+                <IconPlus size={16} className="rotate-45" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-5 py-4">
+              {selectedBeraterEvents.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Keine zukünftigen Veranstaltungen für diesen Berater.</p>
+              ) : (
+                <div className="space-y-2">
+                  {selectedBeraterEvents.map(ev => (
+                    <EventCard
+                      key={ev.record_id}
+                      ev={ev}
+                      onEdit={() => { handleEdit(ev); setSelectedBerater(null); }}
+                      onDelete={() => { setDeleteTarget(ev); setSelectedBerater(null); }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Raum-Overlay */}
       {selectedRaum && (
@@ -542,11 +596,11 @@ function EventCard({ ev, onEdit, onDelete }: {
   );
 }
 
-function BeraterRow({ berater, veranstaltungen }: { berater: Berater; veranstaltungen: EnrichedVeranstaltungen[] }) {
+function BeraterRow({ berater, veranstaltungen, onClick }: { berater: Berater; veranstaltungen: EnrichedVeranstaltungen[]; onClick: () => void }) {
   const count = veranstaltungen.filter(ev => ev.veranstaltung_beraterName === `${berater.fields.berater_vorname ?? ''} ${berater.fields.berater_nachname ?? ''}`.trim()).length;
   const initials = `${(berater.fields.berater_vorname ?? '').charAt(0)}${(berater.fields.berater_nachname ?? '').charAt(0)}`.toUpperCase();
   return (
-    <div className="px-4 py-2.5 flex items-center gap-3">
+    <div className="px-4 py-2.5 flex items-center gap-3 cursor-pointer hover:bg-muted/50 transition-colors" onClick={onClick}>
       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0">
         {initials || '?'}
       </div>
