@@ -1,13 +1,12 @@
 import { useDashboardData } from '@/hooks/useDashboardData';
-import { enrichFachbuecher, enrichFachmagazin, enrichLeadairWebSoftware, enrichVeranstaltungen } from '@/lib/enrich';
+import { enrichVeranstaltungen } from '@/lib/enrich';
 import type { EnrichedVeranstaltungen } from '@/types/enriched';
 import type { Berater, Kongresszentrum, Veranstaltungen } from '@/types/app';
 import { APP_IDS } from '@/types/app';
 import { LivingAppsService, createRecordUrl, extractRecordId } from '@/services/livingAppsService';
-import { formatDate } from '@/lib/formatters';
 import { useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { IconAlertCircle, IconTool, IconRefresh, IconCheck, IconPlus, IconPencil, IconTrash, IconBook, IconChevronLeft, IconChevronRight, IconMapPin, IconUser, IconBuildingArch, IconNews } from '@tabler/icons-react';
+import { IconAlertCircle, IconTool, IconRefresh, IconCheck, IconPlus, IconPencil, IconTrash, IconChevronLeft, IconChevronRight, IconMapPin, IconUser, IconBuildingArch } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { VeranstaltungenDialog } from '@/components/dialogs/VeranstaltungenDialog';
@@ -42,14 +41,11 @@ function getMonthDays(year: number, month: number) {
 
 export default function DashboardOverview() {
   const {
-    fachbuecher, fachmagazin, kongresszentrum, leadairWebSoftware, veranstaltungen, unternehmensdaten: _unternehmensdaten, berater,
+    kongresszentrum, veranstaltungen, unternehmensdaten: _unternehmensdaten, berater,
     kongresszentrumMap, beraterMap,
     loading, error, fetchAll,
   } = useDashboardData();
 
-  const enrichedFachbuecher = enrichFachbuecher(fachbuecher, { beraterMap });
-  const enrichedFachmagazin = enrichFachmagazin(fachmagazin, { beraterMap });
-  const enrichedLeadairWebSoftware = enrichLeadairWebSoftware(leadairWebSoftware, { beraterMap });
   const enrichedVeranstaltungen = enrichVeranstaltungen(veranstaltungen, { kongresszentrumMap, beraterMap });
 
   // --- State (ALL hooks before any early return) ---
@@ -411,37 +407,6 @@ export default function DashboardOverview() {
                 )}
               </div>
             )}
-          </div>
-
-          {/* Fachpublikationen Mini-Übersicht */}
-          <div className="bg-card border border-border rounded-2xl overflow-hidden">
-            <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-              <IconNews size={15} className="text-muted-foreground" />
-              <h3 className="font-semibold text-sm text-foreground">Fachpublikationen</h3>
-            </div>
-            <div className="px-4 py-3 grid grid-cols-2 gap-3">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-foreground">{enrichedFachbuecher.length}</p>
-                <p className="text-xs text-muted-foreground">Fachbücher</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-foreground">{enrichedFachmagazin.length}</p>
-                <p className="text-xs text-muted-foreground">Magazin-Ausgaben</p>
-              </div>
-              <div className="col-span-2 text-center">
-                <p className="text-2xl font-bold text-foreground">{enrichedLeadairWebSoftware.length}</p>
-                <p className="text-xs text-muted-foreground">LeadAir Module</p>
-              </div>
-            </div>
-            {enrichedFachbuecher.slice(0, 2).map(b => (
-              <div key={b.record_id} className="px-4 py-2 border-t border-border/60 flex items-center gap-2">
-                <IconBook size={13} className="shrink-0 text-muted-foreground" />
-                <span className="text-xs text-foreground truncate min-w-0">{b.fields.fachbuch_titel ?? '–'}</span>
-                {b.fields.fachbuch_erscheinungsdatum && (
-                  <span className="text-xs text-muted-foreground shrink-0">{formatDate(b.fields.fachbuch_erscheinungsdatum)}</span>
-                )}
-              </div>
-            ))}
           </div>
         </div>
       </div>
