@@ -3,7 +3,7 @@ import { enrichFachbuecher, enrichFachmagazin, enrichLeadairWebSoftware, enrichV
 import type { EnrichedVeranstaltungen } from '@/types/enriched';
 import type { Berater, Kongresszentrum, Veranstaltungen } from '@/types/app';
 import { APP_IDS } from '@/types/app';
-import { LivingAppsService, createRecordUrl } from '@/services/livingAppsService';
+import { LivingAppsService, createRecordUrl, extractRecordId } from '@/services/livingAppsService';
 import { formatDate } from '@/lib/formatters';
 import { useState, useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -109,11 +109,11 @@ export default function DashboardOverview() {
 
   const selectedBeraterEvents = useMemo(() => {
     if (!selectedBerater) return [];
-    const name = `${selectedBerater.fields.berater_vorname ?? ''} ${selectedBerater.fields.berater_nachname ?? ''}`.trim();
     const now = new Date();
     return enrichedVeranstaltungen
       .filter(ev => {
-        if (ev.veranstaltung_beraterName !== name) return false;
+        const beraterId = extractRecordId(ev.fields.veranstaltung_berater);
+        if (beraterId !== selectedBerater.record_id) return false;
         if (!ev.fields.veranstaltung_datum) return true;
         return new Date(ev.fields.veranstaltung_datum) >= now;
       })
